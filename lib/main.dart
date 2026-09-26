@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'database.dart';
+import 'screens/starting_screen.dart';
+import 'screens/main_scaffold.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,12 +14,23 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Drift DB Test',
+      title: 'OtoCPR',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.black,
         useMaterial3: true,
       ),
-      home: MyHomePage(database: database),
+      home: StartingScreen(
+        onGetStarted: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MainScaffold(),
+            ),
+          );
+        },
+      ),
     );
   }
 }
