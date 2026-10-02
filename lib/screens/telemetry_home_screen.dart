@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../widgets/device_location_map.dart';
+import '../models/telemetry_models.dart';
+import '../services/telemetry_repository.dart';
 
-class TelemetryHomeScreen extends StatelessWidget {
+class TelemetryHomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToTelemetry;
   final VoidCallback? onNavigateToLogs;
 
@@ -12,11 +15,21 @@ class TelemetryHomeScreen extends StatelessWidget {
   });
 
   @override
+  State<TelemetryHomeScreen> createState() => _TelemetryHomeScreenState();
+}
+
+class _TelemetryHomeScreenState extends State<TelemetryHomeScreen> {
+  bool _isInteractingWithMap = false;
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: _isInteractingWithMap
+              ? const NeverScrollableScrollPhysics()
+              : const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,111 +89,130 @@ class TelemetryHomeScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // System Status Header Bar (Device Status & Anomaly Status)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surfacePurple,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.purple.withValues(alpha: 0.25),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // Device Status
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Device Status',
-                            style: AppTypography.sans(
-                              fontSize: 12,
-                              color: AppColors.gray,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceCard,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppColors.cyan.withValues(alpha: 0.5),
+              ListenableBuilder(
+                listenable: Listenable.merge([
+                  TelemetryRepository.instance.esp32Notifier,
+                  TelemetryRepository.instance.babyQcprNotifier,
+                ]),
+                builder: (context, _) {
+                  final esp = TelemetryRepository.instance.esp32;
+                  final isAnomaly = esp.anomalyFlag;
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfacePurple,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.purple.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        // Device Status
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Device Status',
+                                style: AppTypography.sans(
+                                  fontSize: 12,
+                                  color: AppColors.gray,
+                                ),
                               ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceCard,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: (esp.isConnected ? AppColors.cyan : AppColors.gray).withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      esp.isConnected ? Icons.check_circle_rounded : Icons.pause_circle_rounded,
+                                      size: 14,
+                                      color: esp.isConnected ? AppColors.cyan : AppColors.gray,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      esp.deviceStatus,
+                                      style: AppTypography.sans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        Container(
+                          width: 1,
+                          height: 40,
+                          color: AppColors.purple.withValues(alpha: 0.3),
+                        ),
+
+                        // Anomaly Status
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.cyan),
-                                const SizedBox(width: 6),
                                 Text(
-                                  'Connected',
+                                  'Anomaly Status',
                                   style: AppTypography.sans(
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.white,
+                                    color: AppColors.gray,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isAnomaly ? AppColors.surfaceRed : AppColors.surfaceCard,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: (isAnomaly ? AppColors.red : AppColors.green).withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isAnomaly ? Icons.warning_amber_rounded : Icons.verified_rounded,
+                                        size: 14,
+                                        color: isAnomaly ? AppColors.red : AppColors.green,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        isAnomaly ? 'Flagged' : 'Nominal',
+                                        style: AppTypography.sans(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.white,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-
-                    Container(
-                      width: 1,
-                      height: 40,
-                      color: AppColors.purple.withValues(alpha: 0.3),
-                    ),
-
-                    // Anomaly Status
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Anomaly Status',
-                              style: AppTypography.sans(
-                                fontSize: 12,
-                                color: AppColors.gray,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceRed,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: AppColors.red.withValues(alpha: 0.5),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.red),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Flagged',
-                                    style: AppTypography.sans(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
 
               const SizedBox(height: 24),
@@ -202,7 +234,7 @@ class TelemetryHomeScreen extends StatelessWidget {
                       subtitle: 'Carrier Hub',
                       icon: Icons.memory_rounded,
                       isConnected: true,
-                      onTap: onNavigateToTelemetry,
+                      onTap: widget.onNavigateToTelemetry,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -212,7 +244,7 @@ class TelemetryHomeScreen extends StatelessWidget {
                       subtitle: 'Resusci Baby',
                       icon: Icons.child_care_rounded,
                       isConnected: true,
-                      onTap: onNavigateToTelemetry,
+                      onTap: widget.onNavigateToTelemetry,
                     ),
                   ),
                 ],
@@ -229,64 +261,11 @@ class TelemetryHomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  height: 160,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.darkGray,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.purple.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      Image.asset(
-                        'assets/images/map_location.png',
-                        width: double.infinity,
-                        height: 160,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: const Color(0xFF141A22),
-                            child: const Center(
-                              child: Icon(Icons.map_rounded, size: 48, color: AppColors.cyan),
-                            ),
-                          );
-                        },
-                      ),
-                      Positioned(
-                        left: 12,
-                        bottom: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.75),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.cyan.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.location_on_rounded, size: 14, color: AppColors.cyan),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Lat: -6.2088° · Long: 106.8456°',
-                                style: AppTypography.mono(
-                                  fontSize: 11,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              DeviceLocationMap(
+                height: 280,
+                onInteractingChange: (isInteracting) {
+                  setState(() => _isInteractingWithMap = isInteracting);
+                },
               ),
 
               const SizedBox(height: 24),
@@ -302,9 +281,9 @@ class TelemetryHomeScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (onNavigateToLogs != null)
+                  if (widget.onNavigateToLogs != null)
                     TextButton(
-                      onPressed: onNavigateToLogs,
+                      onPressed: widget.onNavigateToLogs,
                       child: Text(
                         'View all',
                         style: AppTypography.sans(
@@ -316,37 +295,25 @@ class TelemetryHomeScreen extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
-              _buildLogsCard(
-                filename: 'W043_supervisor.json',
-                timestamp: '12:36:34',
-                size: '1.1 KB',
-                status: 'Derate',
-                isDerate: true,
-              ),
-              const SizedBox(height: 8),
-              _buildLogsCard(
-                filename: 'W041_inference.json',
-                timestamp: '12:36:14',
-                size: '2.3 KB',
-                status: 'Normal',
-                isDerate: false,
-              ),
-              const SizedBox(height: 8),
-              _buildLogsCard(
-                filename: 'W040_supervisor.json',
-                timestamp: '12:35:54',
-                size: '1.1 KB',
-                status: 'Derate',
-                isDerate: true,
-              ),
-              const SizedBox(height: 8),
-              _buildLogsCard(
-                filename: 'W039_inference.json',
-                timestamp: '12:35:34',
-                size: '2.3 KB',
-                status: 'Normal',
-                isDerate: false,
+              ValueListenableBuilder<List<TelemetryLogItem>>(
+                valueListenable: TelemetryRepository.instance.logsNotifier,
+                builder: (context, logs, _) {
+                  final recentLogs = logs.take(4).toList();
+                  return Column(
+                    children: recentLogs.map((log) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: _buildLogsCard(
+                          filename: log.name,
+                          timestamp: log.time,
+                          size: log.size,
+                          status: log.status,
+                          isDerate: log.isDerate,
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
               ),
 
               const SizedBox(height: 20),

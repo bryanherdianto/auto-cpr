@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../services/telemetry_repository.dart';
 
 class TelemetryDetailsScreen extends StatefulWidget {
   final String title;
@@ -21,12 +22,15 @@ class _TelemetryDetailsScreenState extends State<TelemetryDetailsScreen> {
   int _selectedTimeframe = 0;
   final List<String> _timeframes = ['1m', '5m', '15m', 'All'];
 
-  final List<double> _chartData = [
-    45, 60, 75, 90, 98, 88, 70, 95, 105, 98, 85, 92, 100, 96, 98
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final history = TelemetryRepository.instance.getMetricHistory(
+      widget.title,
+      timeframeIndex: _selectedTimeframe,
+    );
+    final displayValue = widget.currentValue.isNotEmpty ? widget.currentValue : history.currentValue;
+    final displayUnit = widget.unit.isNotEmpty ? widget.unit : history.unit;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -116,21 +120,23 @@ class _TelemetryDetailsScreenState extends State<TelemetryDetailsScreen> {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    widget.currentValue,
+                    displayValue,
                     style: AppTypography.mono(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.unit,
-                    style: AppTypography.sans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.gray,
+                  if (displayUnit.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      displayUnit,
+                      style: AppTypography.sans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gray,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
 
@@ -155,7 +161,7 @@ class _TelemetryDetailsScreenState extends State<TelemetryDetailsScreen> {
                 ),
                 child: CustomPaint(
                   size: Size.infinite,
-                  painter: _TelemetryChartPainter(data: _chartData),
+                  painter: _TelemetryChartPainter(data: history.chartPoints),
                 ),
               ),
 
@@ -180,11 +186,11 @@ class _TelemetryDetailsScreenState extends State<TelemetryDetailsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildStat('Target Range', '80 - 110', widget.unit),
+                    _buildStat('Target Range', history.targetRange, displayUnit),
                     Container(width: 1, height: 36, color: AppColors.gray.withValues(alpha: 0.3)),
-                    _buildStat('Mean Value', '94.2', widget.unit),
+                    _buildStat('Mean Value', history.meanValue, displayUnit),
                     Container(width: 1, height: 36, color: AppColors.gray.withValues(alpha: 0.3)),
-                    _buildStat('Efficiency', '96%', ''),
+                    _buildStat('Efficiency', history.efficiency, ''),
                   ],
                 ),
               ),
@@ -208,7 +214,7 @@ class _TelemetryDetailsScreenState extends State<TelemetryDetailsScreen> {
                   border: Border.all(color: AppColors.purple.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  'Continuous telemetry tracks pulmonary displacement and tidal compliance. High precision flow monitoring guarantees pediatric lung over-inflation safety and verifies resuscitation volume thresholds in real-time.',
+                  history.description,
                   style: AppTypography.sans(
                     fontSize: 13,
                     height: 1.6,

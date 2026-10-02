@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../services/telemetry_repository.dart';
 import 'telemetry_details_screen.dart';
 
 class TelemetryScreen extends StatefulWidget {
@@ -14,6 +15,8 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final repo = TelemetryRepository.instance;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -123,8 +126,13 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
 
               const SizedBox(height: 14),
 
-              // 6-Card Telemetry Grid
-              if (_selectedSubTab == 0) _buildEsp32Grid() else _buildBabyQcprGrid(),
+              // 6-Card Telemetry Grid (Driven by TelemetryRepository)
+              ListenableBuilder(
+                listenable: Listenable.merge([repo.esp32Notifier, repo.babyQcprNotifier]),
+                builder: (context, _) {
+                  return _selectedSubTab == 0 ? _buildEsp32Grid() : _buildBabyQcprGrid();
+                },
+              ),
 
               const SizedBox(height: 24),
 
@@ -137,7 +145,12 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              if (_selectedSubTab == 0) _buildEsp32Summary() else _buildBabyQcprSummary(),
+              ListenableBuilder(
+                listenable: Listenable.merge([repo.esp32Notifier, repo.babyQcprNotifier]),
+                builder: (context, _) {
+                  return _selectedSubTab == 0 ? _buildEsp32Summary() : _buildBabyQcprSummary();
+                },
+              ),
 
               const SizedBox(height: 24),
 
@@ -180,6 +193,8 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
   }
 
   Widget _buildEsp32Grid() {
+    final esp = TelemetryRepository.instance.esp32;
+
     return Column(
       children: [
         Row(
@@ -187,20 +202,20 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Instant force',
-                value: '68.5',
+                value: esp.instantForce.toStringAsFixed(1),
                 unit: 'N',
                 icon: Icons.trending_up_rounded,
-                onTap: () => _openDetails('Instantaneous Force', '68.5', 'N'),
+                onTap: () => _openDetails('Instantaneous Force', esp.instantForce.toStringAsFixed(1), 'N'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
                 title: 'Peak force',
-                value: '94.2',
+                value: esp.peakForce.toStringAsFixed(1),
                 unit: 'N',
                 icon: Icons.compress_rounded,
-                onTap: () => _openDetails('Peak Force', '94.2', 'N'),
+                onTap: () => _openDetails('Peak Force', esp.peakForce.toStringAsFixed(1), 'N'),
               ),
             ),
           ],
@@ -211,20 +226,20 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Position Angle',
-                value: '142.5',
+                value: esp.positionAngle.toStringAsFixed(1),
                 unit: '°',
                 icon: Icons.rotate_right_rounded,
-                onTap: () => _openDetails('Position Angle', '142.5', '°'),
+                onTap: () => _openDetails('Position Angle', esp.positionAngle.toStringAsFixed(1), '°'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
                 title: 'Motor Speed',
-                value: '108',
+                value: esp.motorSpeed.toStringAsFixed(0),
                 unit: 'RPM',
                 icon: Icons.speed_rounded,
-                onTap: () => _openDetails('Motor Speed', '108', 'RPM'),
+                onTap: () => _openDetails('Motor Speed', esp.motorSpeed.toStringAsFixed(0), 'RPM'),
               ),
             ),
           ],
@@ -235,20 +250,20 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Direction',
-                value: 'CW',
+                value: esp.direction,
                 unit: '',
                 icon: Icons.sync_rounded,
-                onTap: () => _openDetails('Direction', 'CW', ''),
+                onTap: () => _openDetails('Direction', esp.direction, ''),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
                 title: 'Compression Count',
-                value: '842',
+                value: '${esp.compressionCount}',
                 unit: 'CYC',
                 icon: Icons.repeat_rounded,
-                onTap: () => _openDetails('Compression Count', '842', 'CYC'),
+                onTap: () => _openDetails('Compression Count', '${esp.compressionCount}', 'CYC'),
               ),
             ),
           ],
@@ -258,6 +273,8 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
   }
 
   Widget _buildBabyQcprGrid() {
+    final qcpr = TelemetryRepository.instance.babyQcpr;
+
     return Column(
       children: [
         Row(
@@ -265,20 +282,20 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'ventilation volume',
-                value: '98',
+                value: qcpr.ventilationVolume.toStringAsFixed(0),
                 unit: 'ML',
                 icon: Icons.air_rounded,
-                onTap: () => _openDetails('Ventilation Volume', '98', 'ML'),
+                onTap: () => _openDetails('Ventilation Volume', qcpr.ventilationVolume.toStringAsFixed(0), 'ML'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
                 title: 'Compression rate',
-                value: '94.2',
+                value: qcpr.compressionRate.toStringAsFixed(1),
                 unit: 'CPM',
                 icon: Icons.favorite_rounded,
-                onTap: () => _openDetails('Compression Rate', '94.2', 'CPM'),
+                onTap: () => _openDetails('Compression Rate', qcpr.compressionRate.toStringAsFixed(1), 'CPM'),
               ),
             ),
           ],
@@ -289,20 +306,20 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Compression Depth',
-                value: '4.7',
+                value: qcpr.compressionDepth.toStringAsFixed(1),
                 unit: 'CM',
                 icon: Icons.straighten_rounded,
-                onTap: () => _openDetails('Compression Depth', '4.7', 'CM'),
+                onTap: () => _openDetails('Compression Depth', qcpr.compressionDepth.toStringAsFixed(1), 'CM'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
                 title: 'Compression Count',
-                value: '108',
+                value: '${qcpr.compressionCount}',
                 unit: 'CYC',
                 icon: Icons.repeat_rounded,
-                onTap: () => _openDetails('Compression Count', '108', 'CYC'),
+                onTap: () => _openDetails('Compression Count', '${qcpr.compressionCount}', 'CYC'),
               ),
             ),
           ],
@@ -313,21 +330,21 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Release OK',
-                value: 'False',
+                value: qcpr.releaseOk ? 'True' : 'False',
                 unit: '',
-                isAlert: true,
-                icon: Icons.cancel_outlined,
-                onTap: () => _openDetails('Release Status', 'False', ''),
+                isAlert: !qcpr.releaseOk,
+                icon: qcpr.releaseOk ? Icons.check_circle_outline : Icons.cancel_outlined,
+                onTap: () => _openDetails('Release Status', qcpr.releaseOk ? 'True' : 'False', ''),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
                 title: 'Breaths',
-                value: '28',
+                value: '${qcpr.breaths}',
                 unit: 'BREATHS',
                 icon: Icons.air_rounded,
-                onTap: () => _openDetails('Breaths', '28', 'BREATHS'),
+                onTap: () => _openDetails('Breaths', '${qcpr.breaths}', 'BREATHS'),
               ),
             ),
           ],
@@ -407,11 +424,12 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
   }
 
   Widget _buildEsp32Summary() {
+    final esp = TelemetryRepository.instance.esp32;
     return Column(
       children: [
-        _buildSummaryRow('mean peak force', '95.4', 'N'),
+        _buildSummaryRow('mean peak force', (esp.peakForce * 1.01).toStringAsFixed(1), 'N'),
         const SizedBox(height: 8),
-        _buildSummaryRow('median speed', '109', 'RPM'),
+        _buildSummaryRow('median speed', esp.motorSpeed.toStringAsFixed(0), 'RPM'),
         const SizedBox(height: 8),
         _buildSummaryRow('mean recoil force', '0.2', 'N'),
       ],
@@ -419,13 +437,14 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
   }
 
   Widget _buildBabyQcprSummary() {
+    final qcpr = TelemetryRepository.instance.babyQcpr;
     return Column(
       children: [
-        _buildSummaryRow('mean ventilation volume', '96.8', 'ML'),
+        _buildSummaryRow('mean ventilation volume', (qcpr.ventilationVolume * 0.98).toStringAsFixed(1), 'ML'),
         const SizedBox(height: 8),
-        _buildSummaryRow('median depth', '4.6', 'CM'),
+        _buildSummaryRow('median depth', (qcpr.compressionDepth * 0.98).toStringAsFixed(1), 'CM'),
         const SizedBox(height: 8),
-        _buildSummaryRow('mean compression rate', '98.1', 'CPM'),
+        _buildSummaryRow('mean compression rate', (qcpr.compressionRate * 1.04).toStringAsFixed(1), 'CPM'),
       ],
     );
   }
