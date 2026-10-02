@@ -21,15 +21,17 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         useMaterial3: true,
       ),
-      home: StartingScreen(
-        onGetStarted: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MainScaffold(),
-            ),
-          );
-        },
+      home: Builder(
+        builder: (context) => StartingScreen(
+          onGetStarted: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MainScaffold(),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

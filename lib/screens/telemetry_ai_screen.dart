@@ -92,46 +92,29 @@ class _TelemetryAiScreenState extends State<TelemetryAiScreen> {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.purple.withValues(alpha: 0.4)),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.green.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '98.4% CONFIDENCE',
-                              style: AppTypography.mono(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.green),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Optimal Compression Dynamics',
-                            style: AppTypography.sans(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Pediatric rhythm & recoil thresholds verified',
-                            style: AppTypography.sans(fontSize: 12, color: AppColors.gray),
-                          ),
-                        ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.green.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '98.4% CONFIDENCE',
+                        style: AppTypography.mono(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.green),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Image.asset(
-                      'assets/images/ai_illustration.png',
-                      width: 72,
-                      height: 72,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.insights_rounded,
-                        size: 48,
-                        color: AppColors.cyan,
-                      ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Optimal Compression Dynamics',
+                      style: AppTypography.sans(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Pediatric rhythm & recoil thresholds verified',
+                      style: AppTypography.sans(fontSize: 12, color: AppColors.gray),
                     ),
                   ],
                 ),
